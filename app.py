@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
+
+st.set_page_config(page_title="AI Job Risk Predictor", layout="wide")
 
 st.title("AI Job Automation Risk Predictor")
 st.write("Predict whether a job has Low, Medium, or High automation risk using machine learning.")
@@ -13,93 +14,86 @@ st.write("Predict whether a job has Low, Medium, or High automation risk using m
 # Load dataset
 df = pd.read_csv("AI_DATASET.csv")
 
-# Encode target
-risk_map = {"Low":0, "Medium":1, "High":2}
-label_map = {0:"Low",1:"Medium",2:"High"}
+# Encode target variable
+risk_map = {"Low": 0, "Medium": 1, "High": 2}
+label_map = {0: "Low", 1: "Medium", 2: "High"}
 
 df["automation_risk_category_encoded"] = df["automation_risk_category"].map(risk_map)
 
-# Features
-features = [
-    "automation_risk_percent",
-    "ai_replacement_score",
-    "skill_gap_index",
-    "salary_before_usd",
-    "salary_after_usd",
-    "salary_change_percent",
-    "skill_demand_growth_percent",
-    "remote_feasibility_score",
-    "ai_adoption_level",
-    "education_requirement_level",
-    "skill_transition_pressure",
-    "wage_volatility_index",
-    "reskilling_urgency_score",
-    "ai_disruption_intensity"
-]
-
+# Features for the model
+features = ["job_role", "industry", "country", "year"]
 X = df[features]
 y = df["automation_risk_category_encoded"]
 
+# Encode categorical variables
+le_job = LabelEncoder()
+le_industry = LabelEncoder()
+le_country = LabelEncoder()
+
+X["job_role"] = le_job.fit_transform(X["job_role"])
+X["industry"] = le_industry.fit_transform(X["industry"])
+X["country"] = le_country.fit_transform(X["country"])
+
+# Train-test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
 # Train model
-X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,random_state=42)
+model = DecisionTreeClassifier(random_state=42)
+model.fit(X_train, y_train)
 
-model = DecisionTreeClassifier()
-model.fit(X_train,y_train)
-
-# Sidebar input
+# Sidebar inputs
 st.sidebar.header("Enter Job Information")
 
-automation_risk_percent = st.sidebar.slider("Automation Risk Percent",0,100,50)
-ai_replacement_score = st.sidebar.slider("AI Replacement Score",0,100,50)
-skill_gap_index = st.sidebar.slider("Skill Gap Index",0,100,50)
-salary_before_usd = st.sidebar.number_input("Salary Before (USD)",30000,200000,50000)
-salary_after_usd = st.sidebar.number_input("Salary After (USD)",30000,200000,55000)
-salary_change_percent = st.sidebar.slider("Salary Change Percent",-50,50,0)
-skill_demand_growth_percent = st.sidebar.slider("Skill Demand Growth Percent",0,20,5)
-remote_feasibility_score = st.sidebar.slider("Remote Feasibility Score",0,100,50)
-ai_adoption_level = st.sidebar.slider("AI Adoption Level",0,100,50)
-education_requirement_level = st.sidebar.slider("Education Requirement Level",1,5,3)
-skill_transition_pressure = st.sidebar.slider("Skill Transition Pressure",0,100,50)
-wage_volatility_index = st.sidebar.slider("Wage Volatility Index",0,100,50)
-reskilling_urgency_score = st.sidebar.slider("Reskilling Urgency Score",0,100,50)
-ai_disruption_intensity = st.sidebar.slider("AI Disruption Intensity",0,100,50)
+job_role_input = st.sidebar.selectbox(
+    "Job Role", sorted(df["job_role"].unique())
+)
 
-# Prediction input
-input_data = np.array([[
+industry_input = st.sidebar.selectbox(
+    "Industry", sorted(df["industry"].unique())
+)
 
-automation_risk_percent,
-ai_replacement_score,
-skill_gap_index,
-salary_before_usd,
-salary_after_usd,
-salary_change_percent,
-skill_demand_growth_percent,
-remote_feasibility_score,
-ai_adoption_level,
-education_requirement_level,
-skill_transition_pressure,
-wage_volatility_index,
-reskilling_urgency_score,
-ai_disruption_intensity
+country_input = st.sidebar.selectbox(
+    "Country", sorted(df["country"].unique())
+)
 
-]])
+year_input = st.sidebar.slider(
+    "Year", int(df["year"].min()), int(df["year"].max()), int(df["year"].median())
+)
 
+# Prediction
 if st.sidebar.button("Predict Automation Risk"):
-    
+
+    input_data = pd.DataFrame({
+        "job_role": [le_job.transform([job_role_input])[0]],
+        "industry": [le_industry.transform([industry_input])[0]],
+        "country": [le_country.transform([country_input])[0]],
+        "year": [year_input]
+    })
+
     prediction = model.predict(input_data)[0]
-    
+
     st.subheader("Prediction Result")
     st.success(f"Predicted Automation Risk: {label_map[prediction]}")
 
-# Show dataset
-st.subheader("Dataset Preview")
-st.write(df.head())
+    # Additional information
+    similar_jobs = df[df["job_role"] == job_role_input]
+    avg_risk = similar_jobs["automation_risk_percent"].mean()
 
-# Confusion matrix
+    st.write("Average Automation Risk Percent for this job role:")
+    st.write(f"{avg_risk:.2f}%")
+
+# Dataset preview
+st.subheader("Dataset Preview")
+st.dataframe(df.head())
+
+# Model evaluation
 st.subheader("Model Evaluation")
 
 y_pred = model.predict(X_test)
-cm = confusion_matrix(y_test,y_pred)
+
+cm = confusion_matrix(y_test, y_pred)
 
 fig, ax = plt.subplots()
 ax.imshow(cm)
@@ -109,3 +103,6 @@ ax.set_ylabel("Actual")
 ax.set_title("Confusion Matrix")
 
 st.pyplot(fig)
+
+st.write("Confusion Matrix Values:")
+st.write(cm)
