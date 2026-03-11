@@ -141,7 +141,7 @@ if selected_role:
         st.write(f"**Most Common Country:** {common_country}")
         st.write(f"**Number of Records for this Role:** {total_records}")
 
-    st.markdown("**Note: **")
+    st.markdown("**Note:**")
     st.write(
         "- **Predicted Automation Risk Category** is the model's output for the selected job role."
     )
