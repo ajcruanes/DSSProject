@@ -93,7 +93,7 @@ else:
 # -------------------------
 # Dataset background
 # -------------------------
-st.subheader("📈 Background of the Data Used")
+st.subheader("📊 Background of the Data Used")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -241,6 +241,6 @@ st.dataframe(cm_df)
 # -------------------------
 # Sample dataset
 # -------------------------
-st.subheader("6. Sample Dataset Preview")
+st.subheader("📈 Sample Dataset Preview")
 st.write("This is only a sample preview of the dataset for demonstration purposes.")
 st.dataframe(df.sample(min(20, len(df)), random_state=42).reset_index(drop=True))
