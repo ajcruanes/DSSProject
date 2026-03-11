@@ -1,122 +1,146 @@
 import streamlit as st
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import confusion_matrix, accuracy_score
-import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="AI Job Risk Predictor", layout="wide")
+st.set_page_config(page_title="AI Job Automation Risk Finder", layout="wide")
 
-st.title("AI Job Automation Risk Predictor")
-st.write("Select a job role and the system will automatically predict its automation risk category.")
+st.title("AI Job Automation Risk Finder")
+st.write("Search for a job role and view its automation risk based on the dataset.")
 
 # Load dataset
-df = pd.read_csv("AI_DATASET.csv")
+@st.cache_data
+def load_data():
+    df = pd.read_csv("AI_DATASET.csv")
+    return df
 
-# Encode target variable
-risk_map = {"Low": 0, "Medium": 1, "High": 2}
-label_map = {0: "Low", 1: "Medium", 2: "High"}
+df = load_data()
 
-df["automation_risk_category_encoded"] = df["automation_risk_category"].map(risk_map)
+# Clean text columns just in case
+for col in ["job_role", "industry", "country", "automation_risk_category"]:
+    if col in df.columns:
+        df[col] = df[col].astype(str).str.strip()
 
-# Use only job_role as input
-X = df[["job_role"]].copy()
-y = df["automation_risk_category_encoded"]
+# Sidebar info
+st.sidebar.header("Search Job Role")
+search_term = st.sidebar.text_input("Type a job role", "")
 
-# Encode job_role
-le_job = LabelEncoder()
-X["job_role"] = le_job.fit_transform(X["job_role"])
+# Get all unique job roles
+all_job_roles = sorted(df["job_role"].dropna().unique())
 
-# Train-test split
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
+# Filter based on search term
+if search_term:
+    filtered_roles = [
+        role for role in all_job_roles
+        if search_term.lower() in role.lower()
+    ]
+else:
+    filtered_roles = all_job_roles
 
-# Train model
-model = DecisionTreeClassifier(random_state=42)
-model.fit(X_train, y_train)
+# Show matching roles
+selected_role = None
 
-# Sidebar input
-st.sidebar.header("Job Role Input")
-job_role_input = st.sidebar.selectbox(
-    "Select Job Role",
-    sorted(df["job_role"].dropna().unique())
-)
+if len(filtered_roles) > 0:
+    selected_role = st.sidebar.selectbox(
+        "Matching Job Roles",
+        filtered_roles
+    )
+else:
+    st.sidebar.warning("No matching job roles found.")
 
-# Automatically predict when a role is selected
-encoded_role = le_job.transform([job_role_input])[0]
-input_data = pd.DataFrame({"job_role": [encoded_role]})
-prediction = model.predict(input_data)[0]
-
-# Main result
-st.subheader("Prediction Result")
-st.success(f"Predicted Automation Risk: {label_map[prediction]}")
-
-# Show supporting info from dataset
-role_data = df[df["job_role"] == job_role_input]
-
-avg_risk = role_data["automation_risk_percent"].mean()
-common_category = role_data["automation_risk_category"].mode()[0]
-common_industry = role_data["industry"].mode()[0] if not role_data["industry"].mode().empty else "N/A"
-common_country = role_data["country"].mode()[0] if not role_data["country"].mode().empty else "N/A"
-record_count = len(role_data)
-
-st.subheader("Job Role Summary")
-col1, col2 = st.columns(2)
+# Main content
+st.subheader("Dataset Information")
+col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.write(f"**Selected Job Role:** {job_role_input}")
-    st.write(f"**Most Common Risk Category in Dataset:** {common_category}")
-    st.write(f"**Average Automation Risk Percent:** {avg_risk:.2f}%")
+    st.metric("Total Records", df.shape[0])
 
 with col2:
-    st.write(f"**Number of Records for this Role:** {record_count}")
-    st.write(f"**Most Common Industry:** {common_industry}")
-    st.write(f"**Most Common Country:** {common_country}")
+    st.metric("Total Features", df.shape[1])
 
-# Dataset information
-st.subheader("Dataset Information")
-st.write(f"**Total Records:** {df.shape[0]}")
-st.write(f"**Total Features:** {df.shape[1]}")
-st.write(f"**Unique Job Roles:** {df['job_role'].nunique()}")
+with col3:
+    st.metric("Unique Job Roles", df["job_role"].nunique())
 
-# Sample preview
-st.subheader("Sample Dataset Preview")
-st.dataframe(df.sample(min(20, len(df)), random_state=42))
+st.divider()
 
-# Model evaluation
-st.subheader("Model Evaluation")
+if selected_role:
+    role_data = df[df["job_role"] == selected_role]
 
-y_pred = model.predict(X_test)
-acc = accuracy_score(y_test, y_pred)
+    # Compute summary stats
+    avg_risk_percent = role_data["automation_risk_percent"].mean()
+    most_common_risk = role_data["automation_risk_category"].mode()[0]
+    common_industry = role_data["industry"].mode()[0] if not role_data["industry"].mode().empty else "N/A"
+    common_country = role_data["country"].mode()[0] if not role_data["country"].mode().empty else "N/A"
+    avg_ai_adoption = role_data["ai_adoption_level"].mean() if "ai_adoption_level" in role_data.columns else None
+    avg_reskilling = role_data["reskilling_urgency_score"].mean() if "reskilling_urgency_score" in role_data.columns else None
+    total_records = len(role_data)
 
-st.write(f"**Model Accuracy:** {acc:.4f}")
+    st.subheader("Automation Risk Result")
+    st.success(f"Job Role: {selected_role}")
+    st.info(f"Most Common Automation Risk Category: {most_common_risk}")
 
-cm = confusion_matrix(y_test, y_pred)
+    colA, colB = st.columns(2)
 
-fig, ax = plt.subplots()
-im = ax.imshow(cm)
+    with colA:
+        st.write(f"**Average Automation Risk Percent:** {avg_risk_percent:.2f}%")
+        st.write(f"**Most Common Industry:** {common_industry}")
+        st.write(f"**Most Common Country:** {common_country}")
 
-ax.set_xticks([0, 1, 2])
-ax.set_yticks([0, 1, 2])
-ax.set_xticklabels(["Low", "Medium", "High"])
-ax.set_yticklabels(["Low", "Medium", "High"])
-ax.set_xlabel("Predicted")
-ax.set_ylabel("Actual")
-ax.set_title("Confusion Matrix")
+    with colB:
+        st.write(f"**Number of Records for this Role:** {total_records}")
+        if avg_ai_adoption is not None:
+            st.write(f"**Average AI Adoption Level:** {avg_ai_adoption:.2f}")
+        if avg_reskilling is not None:
+            st.write(f"**Average Reskilling Urgency Score:** {avg_reskilling:.2f}")
 
-for i in range(cm.shape[0]):
-    for j in range(cm.shape[1]):
-        ax.text(j, i, cm[i, j], ha="center", va="center")
+    # Explanation text
+    st.subheader("Interpretation")
+    if most_common_risk.lower() == "high":
+        st.write(
+            "This job role is commonly classified as **High Risk**, which means it is more vulnerable "
+            "to automation and AI-driven replacement compared to other roles in the dataset."
+        )
+    elif most_common_risk.lower() == "medium":
+        st.write(
+            "This job role is commonly classified as **Medium Risk**, which means it may be partially "
+            "affected by automation, but not fully replaced in the near term."
+        )
+    else:
+        st.write(
+            "This job role is commonly classified as **Low Risk**, which means it is less vulnerable "
+            "to automation compared to other roles in the dataset."
+        )
 
-plt.tight_layout()
-st.pyplot(fig)
+    st.divider()
 
-# Explanation
-st.subheader("How the Prediction Works")
+    st.subheader("Matching Records")
+    display_columns = [
+        "job_role",
+        "industry",
+        "country",
+        "year",
+        "automation_risk_percent",
+        "automation_risk_category",
+        "ai_adoption_level",
+        "reskilling_urgency_score"
+    ]
+
+    available_columns = [col for col in display_columns if col in role_data.columns]
+    st.dataframe(role_data[available_columns].reset_index(drop=True))
+
+else:
+    st.subheader("How to Use")
+    st.write(
+        "Type a job role in the search box on the left sidebar. "
+        "Then select one of the matching job roles to view its automation risk."
+    )
+
+    st.subheader("Sample Job Roles")
+    st.dataframe(pd.DataFrame({"job_role": all_job_roles[:20]}))
+
+st.divider()
+
+st.subheader("About This App")
 st.write(
-    "This version of the app uses job role as the only input feature. "
-    "When a user selects a job role, the trained Decision Tree model predicts whether that role "
-    "has Low, Medium, or High automation risk based on patterns learned from the dataset."
+    "This app reads all job roles from the uploaded CSV dataset. "
+    "When a user searches for a job role, the app retrieves matching entries and shows "
+    "the most common automation risk category along with related job statistics."
 )
