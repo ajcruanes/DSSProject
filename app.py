@@ -141,7 +141,7 @@ if selected_role:
         st.write(f"**Most Common Country:** {common_country}")
         st.write(f"**Number of Records for this Role:** {total_records}")
 
-    st.markdown("**How to read this result:**")
+    st.markdown("**Note: **")
     st.write(
         "- **Predicted Automation Risk Category** is the model's output for the selected job role."
     )
@@ -165,7 +165,7 @@ st.write(
     "job roles into Low, Medium, or High automation risk."
 )
 
-st.markdown("**How the model works:**")
+st.markdown("**Note:**")
 st.write(
     "The model learns patterns from the dataset and uses job role as the input feature "
     "to predict the automation risk category."
@@ -186,7 +186,7 @@ with metric_col3:
 with metric_col4:
     st.metric("F1 Score", f"{f1:.4f}")
 
-st.markdown("**How to read the evaluation metrics:**")
+st.markdown("**Note:**")
 st.write("- **Accuracy**: the overall percentage of correct predictions.")
 st.write("- **Precision**: how reliable the model’s predicted classes are.")
 st.write("- **Recall**: how well the model finds the actual classes.")
