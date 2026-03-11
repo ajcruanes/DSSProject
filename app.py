@@ -167,7 +167,7 @@ st.write(
 
 st.markdown("**Note:**")
 st.write(
-    "The model learns patterns from the dataset and uses job role as the input feature "
+    "- **The model learns patterns from the dataset and uses job role as the input feature"
     "to predict the automation risk category."
 )
 
