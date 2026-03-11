@@ -244,14 +244,4 @@ st.dataframe(cm_df)
 st.subheader("6. Sample Dataset Preview")
 st.write("This is only a sample preview of the dataset for demonstration purposes.")
 st.dataframe(df.sample(min(20, len(df)), random_state=42).reset_index(drop=True))
-
-# -------------------------
-# Notes
-# -------------------------
-st.subheader("7. Notes")
-st.write(
-    "This deployment version is simplified for user convenience. "
-    "The user only needs to search for a job role, and the app predicts the automation risk category. "
-    "For the presentation, the full project workflow, including EDA and comparison of models, "
-    "should still be explained in the PPT."
 )
