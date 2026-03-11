@@ -93,7 +93,7 @@ else:
 # -------------------------
 # Dataset background
 # -------------------------
-st.subheader("1. Background of the Data Used")
+st.subheader("📈 Background of the Data Used")
 
 col1, col2, col3 = st.columns(3)
 with col1:
@@ -113,7 +113,7 @@ st.write(
 # -------------------------
 # Prediction result
 # -------------------------
-st.subheader("2. Deployment Demo")
+st.subheader("🗳️ Results")
 
 if selected_role:
     encoded_role = le_job.transform([selected_role])[0]
@@ -157,7 +157,7 @@ else:
 # -------------------------
 # Models used
 # -------------------------
-st.subheader("3. Model Used")
+st.subheader("⚙️ Model Used")
 
 st.write("**Model:** Decision Tree Classifier")
 st.write(
@@ -174,7 +174,7 @@ st.write(
 # -------------------------
 # Model evaluation
 # -------------------------
-st.subheader("4. Model Evaluation")
+st.subheader("🔨 Model Evaluation")
 
 metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
 with metric_col1:
@@ -195,7 +195,7 @@ st.write("- **F1 Score**: the balanced measure of precision and recall.")
 # -------------------------
 # Confusion matrix
 # -------------------------
-st.subheader("5. Confusion Matrix")
+st.subheader("📋 Confusion Matrix")
 
 fig, ax = plt.subplots()
 im = ax.imshow(cm)
@@ -235,7 +235,7 @@ cm_df = pd.DataFrame(
     columns=["Predicted Low", "Predicted Medium", "Predicted High"]
 )
 
-st.write("Confusion Matrix Table:")
+st.write("📏 Confusion Matrix Table:")
 st.dataframe(cm_df)
 
 # -------------------------
