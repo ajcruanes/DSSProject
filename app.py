@@ -215,7 +215,7 @@ for i in range(cm.shape[0]):
 plt.tight_layout()
 st.pyplot(fig)
 
-st.markdown("**How to read the confusion matrix:**")
+st.markdown("**Note:**")
 st.write(
     "- The **rows** represent the **actual or true labels**."
 )
